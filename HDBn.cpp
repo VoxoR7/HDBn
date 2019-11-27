@@ -15,6 +15,32 @@ HDBn::HDBn( const char *messagep, uint8_t HDBn ) {
 
     uint16_t i = 0, j = 0;
     uint16_t taille = strlen(messagep), p = 1;
+
+    while ( messagep[j] != '\0' ) {
+
+        switch ( messagep[j] ) {
+            case '0':
+                *( message + i ) = 0;
+                break;
+            case '1':
+                *( message + i ) = 1;
+                break;
+            default:
+                printf("\033[33mwarning : \033[00mcaractere non reconnu [%c]\n", messagep[j] );
+                i--;
+                taille--;
+        }
+
+        i++;
+        j++;
+    }
+
+    if ( taille == 0 ) {
+
+        printf("\033[31merror : \033[00maucun caracetere valide\n");
+        return;
+    }
+
     p = p << 15;
 
     message = new int8_t[taille + 16]; /* les 16 premiers bit correspondent a la taille du message */
@@ -33,24 +59,6 @@ HDBn::HDBn( const char *messagep, uint8_t HDBn ) {
     }
 
     printf("\n");
-
-    while ( messagep[j] != '\0' ) {
-
-        switch ( messagep[j] ) {
-            case '0':
-                *( message + i ) = 0;
-                break;
-            case '1':
-                *( message + i ) = 1;
-                break;
-            default:
-                printf("\033[31mwarning : carctere non reconnu : %c\033[00m\n", messagep[j] );
-                i--;
-        }
-
-        i++;
-        j++;
-    }
 }
 
 void HDBn::encodage () {
@@ -59,7 +67,21 @@ void HDBn::encodage () {
     int8_t dernierViol = -1;
     uint16_t i = 0, j, k;
 
-    while ( message[i] != 2 ) {
+    uint16_t it = 0, jt = 1, taille = 16;
+    jt = jt << 15;
+
+    while ( it < 16 ) {
+
+        if ( message[it] == 1 )
+            taille += jt;
+
+        printf("%" PRId8" ", message[it]);
+        
+        jt = jt >> 1;
+        it++;
+    }
+
+    while ( taille --> 0 ) {
 
         if ( message[i] == 0 ) {
 
@@ -200,8 +222,6 @@ void HDBn::afficher() {
 
     uint16_t i = 0, j = 1, taille = 0;
     j = j << 15;
-
-    printf("lecture binaire : \n");
 
     while ( i < 16 ) {
 

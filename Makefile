@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-g
+CFLAGS=-O2
 
 PROG=main
 

@@ -7,13 +7,13 @@ int main () {
     printf("--- Creation ---\n");
 
     /*HDBn hdbn = HDBn("10010100000011000011100", 2);*/
-    HDBn hdbn = HDBn("1010010101", 2);
+    HDBn hdbn = HDBn("101", 2);
 
-    printf("--- Affichage ---\n");
+    /*printf("--- Affichage ---\n");
 
     hdbn.afficher();
 
-    /*printf("--- Encodage ---\n");
+    printf("--- Encodage ---\n");
 
     hdbn.encodage();
 
