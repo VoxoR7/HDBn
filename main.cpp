@@ -6,10 +6,10 @@ int main () {
 
     printf("--- Creation ---\n");
 
-    /*HDBn hdbn = HDBn("10010100000011000011100", 2);*/
-    HDBn hdbn = HDBn("101", 2);
+    HDBn hdbn = HDBn("10010100000011000011100", 2);
+    /*HDBn hdbn = HDBn("101", 2);*/
 
-    /*printf("--- Affichage ---\n");
+    printf("--- Affichage ---\n");
 
     hdbn.afficher();
 
@@ -19,5 +19,11 @@ int main () {
 
     printf("--- Affichage ---\n");
 
-    hdbn.afficher();*/
+    hdbn.afficher( 23);
+
+    printf("--- Decodage ---\n");
+
+    printf("--- Affichage ---\n");
+
+    hdbn.afficher( 23);
 }
