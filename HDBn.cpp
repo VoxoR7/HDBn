@@ -5,14 +5,14 @@
 
 #define HDBN 2
 
-HDBn::HDBn( const char *messagep, uint8_t HDBn ) {
+HDBn::HDBn( const char *messagep ) {
 
     uint16_t i = 0, j = 0;
     uint16_t taille = strlen(messagep), p = 1;
 
     if ( taille < HDBN + 1 ) {
 
-        printf("\033[31merror : \033[00La taille du message est insuffisante pour etre envoyé ( minimum : %d )\n", HDBn + 1);
+        printf("\033[31merreur : \033[00La taille du message est insuffisante pour etre envoyé ( minimum : %d )\n", HDBN + 1);
         return;
     }
 
@@ -27,7 +27,7 @@ HDBn::HDBn( const char *messagep, uint8_t HDBn ) {
 
     if ( taille == 0 ) {
 
-        printf("\033[31merror : \033[00maucun caracetere valide\n");
+        printf("\033[31merreur : \033[00maucun caracetere valide\n");
         return;
     }
 
@@ -69,8 +69,6 @@ HDBn::HDBn( const char *messagep, uint8_t HDBn ) {
         i++;
         j++;
     }
-
-    printf("\n");
 }
 
 void HDBn::encodage () {
@@ -159,10 +157,7 @@ void HDBn::encodage () {
 
 void HDBn::decodage() {
 
-    decodage( 16);
-}
-
-void HDBn::decodage( uint16_t tailleDecodage ) {
+    uint16_t tailleDecodage = 16;
 
     int8_t dernier1 = -1;
     int8_t dernierViol = -1;
@@ -170,79 +165,120 @@ void HDBn::decodage( uint16_t tailleDecodage ) {
 
     int8_t *sequence = new int8_t[HDBN + 1];
 
-    while ( tailleDecodage --> 0 ) {
+    /* decodage des 16 bits de longueur du message */
 
-        if ( message[i] == -dernier1 ) {
+    while ( i < tailleDecodage ) {
+
+        j = i, k = 0;
+
+        if ( message[j] == message[j + HDBN] ) { /* test pour savoir si il y a une plusieurs 0 a la suite ( si oui alors k = 1 ) */
+
+            k = 1;
+
+            while ( ++j < i + HDBN )
+                if ( message[j] != 0 ) {
+
+                    k = 0;
+                    j = i + HDBN;
+                }
+        } else {
+
+            k = 1;
+
+            while ( j++ < i + HDBN )
+                if ( message[j-1] != 0 ) {
+
+                    k = 0;
+                    j = i + HDBN + 1;
+                }
+
+            if ( message[j] != dernier1 )
+                k = 0; 
+        }
+
+        if ( !k && message[i] != 0 ) { /* si il n'y a pas d'erreur ( pas plus de hdbn 0 a la suite, alors on traite le cas normale */
 
             message[i] = 1;
+            dernier1 = -dernier1;
+            i++;
+        } else if ( k ) { /* sinon on remet les 0 */
+            j = i;
+
+            if ( message[i + HDBN] == dernier1 )
+                dernier1 = -dernier1;
+
+            while ( j++ <= i + HDBN )
+                message[j-1] = 0;
+
+            i = i + HDBN + 1;
+
+        } else
+            i++;
+    }
+
+    /* fin de decodage des 16 premiers bits */
+
+    uint16_t ti = 0, tj = 1, taille = 0;
+    tj = tj << 15;
+
+    while ( ti < 16 ) {
+
+        if ( message[ti] == 1 )
+            taille += tj;
+        
+        tj = tj >> 1;
+        ti++;
+    }
+
+    /* decodage du message */
+
+    while ( i < tailleDecodage + taille ) {
+
+        j = i, k = 0;
+
+        if ( message[j] == message[j + HDBN] ) {
+
+            k = 1;
+
+            while ( ++j < i + HDBN )
+                if ( message[j] != 0 ) {
+
+                    k = 0;
+                    j = i + HDBN;
+                }
         } else {
+
+            k = 1;
+
+            while ( j++ < i + HDBN )
+                if ( message[j-1] != 0 ) {
+
+                    k = 0;
+                    j = i + HDBN + 1;
+                }
+
+            if ( message[j] != dernier1 )
+                k = 0; 
+        }
+
+        if ( !k && message[i] != 0 ) {
+
+            message[i] = 1;
+            dernier1 = -dernier1;
+            i++;
+        } else if ( k ) {
             j = i;
             
-            while ( j++ < i + HDBN )
-                sequence[j-i-1] = message[j-1];
+            if ( sequence[i + HDBN] == dernier1 )
+                dernier1 = -dernier1;
 
-            j = 0;
+            while ( j++ <= i + HDBN )
+                message[j-1] = 0;
 
-            printf("seq : %d %d %d", sequence[0], sequence[1], sequence[2]);
+            i = i + HDBN + 1;
 
-            if ( dernierViol == 1 ) {
-                if ( dernier1 == 1 ) {
-
-                    if ( sequence[0] == -1 && sequence[HDBN] == -1 ) {
-                        while ( sequence[++j] == 0 );
-
-                        if ( j == HDBN ) {
-
-                            message[i] = 0;
-                            message[HDBN] = 0;
-                        }
-                    }
-
-                    i = i + HDBN + 1;
-                } else {
-
-                    if ( sequence[0] == 0 && sequence[HDBN] == -1 ) {
-                        while ( sequence[++j] == 0 );
-
-                        if ( j == HDBN ) {
-
-                            message[i] = 0;
-                            message[HDBN] = 0;
-                        }
-                    }
-
-                    i = i + HDBN + 1;
-                }
-            } else {
-                if ( dernier1 == 1 ) {
-
-                    if ( sequence[0] == 0 && sequence[HDBN] == 1 ) {
-                        while ( sequence[++j] == 0 );
-
-                        if ( j == HDBN ) {
-
-                            message[i] = 0;
-                            message[HDBN] = 0;
-                        }
-                    }
-
-                    i = i + HDBN + 1;
-                } else {
-                    
-                    if ( sequence[0] == 1 && sequence[HDBN] == 1 ) {
-                        while ( sequence[++j] == 0 );
-
-                        if ( j == HDBN ) {
-
-                            message[i] = 0;
-                            message[HDBN] = 0;
-                        }
-                    }
-
-                    i = i + HDBN + 1;
-                }
-            }
-        }
+        } else
+            i++;
     }
 }
 

@@ -8,7 +8,7 @@ class HDBn {
         void decodage( uint16_t tailleDecodage );
 
     public:
-        HDBn( const char *messagep, uint8_t HDBn );
+        HDBn( const char *messagep );
         void encodage();
         void decodage();
         void afficher();
