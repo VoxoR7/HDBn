@@ -3,18 +3,35 @@
 #include <string.h>
 #include <stdio.h>
 
-#define HDBN 2
+#define DEFAULT_HDBN 3
+#define MAX_HDBN 4
 
-HDBn::HDBn( const char *messagep ) {
+#define MAX_CAR 63
+
+#define MARGE 0.002
+
+HDBn::HDBn( const char *messagep, uint8_t hdbn ) {
+    /* cette fonction prepare le message a etre codé */
 
     uint16_t i = 0, j = 0;
     uint16_t taille = strlen(messagep), p = 1;
 
-    if ( taille < HDBN + 1 ) {
+    if ( hdbn < 1 || hdbn > MAX_HDBN ) {
+
+        HDBN = DEFAULT_HDBN;
+    } else
+        HDBN = hdbn;
+
+    if ( HDBN == 1 )
+        printf("Codage arithmetique utilisé\n");
+    else
+        printf("Codage HDB%d utilsé\n", HDBN);
+    
+    if ( HDBN != 1 && taille < HDBN + 1 ) {
 
         printf("\033[31merreur : \033[00La taille du message est insuffisante pour etre envoyé ( minimum : %d )\n", HDBN + 1);
         return;
-    }
+    } else if ( HDBN != 1 )
 
     for ( i = 0, j = taille ; i < j ; i++ ) {
 
@@ -31,47 +48,125 @@ HDBn::HDBn( const char *messagep ) {
         return;
     }
 
-    i = 0, j = 0;
+    if ( HDBN > 1 ) {
 
-    p = p << 15;
+        i = 0, j = 0;
 
-    message = new int8_t[taille + 16]; /* les 16 premiers bit correspondent a la taille du message */
+        p = p << 15;
 
-    while ( p != 0 ) {
+        message = new int8_t[taille + 16]; /* les 16 premiers bit correspondent a la taille du message */
 
-        if ( taille >= p ) {
+        while ( p != 0 ) {
 
-            message[i] = 1;
-            taille -= p;
-        } else
-            message[i] = 0;
+            if ( taille >= p ) {
 
-        i++;
-        p = p >> 1;
-    }
+                message[i] = 1;
+                taille -= p;
+            } else
+                message[i] = 0;
 
-    taille = strlen(messagep);
-
-    while ( messagep[j] != '\0' ) {
-
-        switch ( messagep[j] ) {
-            case '0':
-                *( message + i ) = 0;
-                break;
-            case '1':
-                *( message + i ) = 1;
-                break;
-            default:
-                i--;
-                taille--;
+            i++;
+            p = p >> 1;
         }
 
-        i++;
-        j++;
+        taille = strlen(messagep);
+
+        while ( messagep[j] != '\0' ) {
+
+            switch ( messagep[j] ) {
+                case '0':
+                    *( message + i ) = 0;
+                    break;
+                case '1':
+                    *( message + i ) = 1;
+                    break;
+                default:
+                    i--;
+                    taille--;
+            }
+
+            i++;
+            j++;
+        }
+
+    } else {
+
+        messageAri = new char[strlen(messagep)];
+        strcpy( messageAri, messagep); /* permet de sauvegarder le message au lieu de le repasser par parametre a la fonction d'encodage */
+        
+        probBI = new double[MAX_CAR];
+        probBS = new double[MAX_CAR];
+        car = new char[MAX_CAR];
+
+        uint16_t *apparition = new uint16_t[MAX_CAR];
+
+        uint16_t i = 0, newCar = 0, j;
+
+        while ( messagep[i] != '\0' ) {
+
+            j = 0;
+
+            while ( j < newCar && car[j] != messagep[i] )
+                j++;
+
+            if ( j == newCar ) {
+
+                newCar++;
+                car[j] = messagep[i];
+                apparition[j] = 1;
+            } else
+                apparition[j]++;
+
+            i++;
+        }
+
+        j = 1;
+
+        probBI[0] = 0;
+        probBS[0] = (float)apparition[0] / (float)i;
+
+        while ( j < newCar ) {
+
+            probBI[j] = probBS[j - 1];
+            probBS[j] = probBI[j] + (float)apparition[j] / (float)i;
+            j++;
+        }
     }
 }
 
 void HDBn::encodage () {
+
+    if ( HDBN > 1 )
+        codage_HDBN();
+    else
+        codage_Ari();
+}
+
+void HDBn::decodage() {
+
+    if ( HDBN > 1 )
+        decodage_HDBN();
+    else
+        decodage_Ari();
+}
+
+void HDBn::afficher() {
+
+    if ( HDBN > 1 )
+        affichage_HDBN();
+    else
+        affichage_Ari();
+}
+
+void HDBn::afficher( uint16_t forceTaille ) {
+
+    if ( HDBN > 1 )
+        affichage_HDBN( forceTaille );
+    else
+        affichage_Ari();
+}
+
+void HDBn::codage_HDBN() {
 
     int8_t dernier1 = -1;
     int8_t dernierViol = -1;
@@ -155,7 +250,7 @@ void HDBn::encodage () {
     }
 }
 
-void HDBn::decodage() {
+void HDBn::decodage_HDBN() {
 
     uint16_t tailleDecodage = 16;
 
@@ -282,7 +377,7 @@ void HDBn::decodage() {
     }
 }
 
-void HDBn::afficher() {
+void HDBn::affichage_HDBN() {
 
     uint16_t i = 0, j = 1, taille = 0;
     j = j << 15;
@@ -314,7 +409,7 @@ void HDBn::afficher() {
     printf("\n");
 }
 
-void HDBn::afficher( uint16_t forceTaille ) {
+void HDBn::affichage_HDBN( uint16_t forceTaille ) {
 
     uint16_t i = 0;
     forceTaille += 16;
@@ -332,4 +427,68 @@ void HDBn::afficher( uint16_t forceTaille ) {
     }
 
     printf("\n");
+}
+
+void HDBn::codage_Ari() {
+
+    uint16_t t = strlen( messageAri);
+    uint8_t j;
+
+    double BI = 0, BS = 1, diff;
+
+    for ( uint16_t i = 0 ; i < t ; i++ ) {
+
+        j = 0;
+
+        while ( car[j] != messageAri[i] )
+            j++;
+
+        diff = BS - BI;
+
+        BS = BI + diff * probBS[j];
+        BI = BI + diff * probBI[j];
+    }
+
+    res = ( BS - BI ) / 2 + BI;
+
+    printf("le message %s encodé est : %f\n", messageAri, res);
+    delete[] messageAri;
+}
+
+void HDBn::decodage_Ari() {
+
+    uint8_t j;
+    uint16_t i = 0;
+    messageAri = new char[256];
+
+    while ( res <= 0.5 - MARGE || res >= 0.5 + MARGE ) {
+
+        j = 0;
+
+        while ( ! ( probBI[j] <= res && probBS[j] >= res ) )
+            j++;
+
+        messageAri[i] = car[j];
+
+        res = ( res - probBI[j] ) / ( probBS[j] - probBI[j] );
+
+        i++;
+    }
+
+    messageAri[i] = '\0';
+
+    printf("Le message a été decoder : %s\n", messageAri);
+}
+
+void HDBn::affichage_Ari() {
+
+    uint16_t j = 0;
+
+    while ( probBS[j] <= 1 ) {
+
+        printf("car : %c | BI : %2.5f | BS : %2.5f\n", car[j], probBI[j], probBS[j]);
+        j++;
+    }
+
+    printf("car : %c | BI : %2.5f | BS : %2.5f\n", car[j], probBI[j], probBS[j]);
 }
