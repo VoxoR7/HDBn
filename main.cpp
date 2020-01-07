@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-/*int main () {
+int main () {
 
     printf("--- Creation ---\n");
 
@@ -27,13 +27,13 @@
     printf("--- Affichage ---\n");
 
     hdbn.afficher();
-}*/
+}
 
-int main () {
+/*int main () {
 
     printf("--- Creation ---\n");
 
-    HDBn hdbn = HDBn("ALOOOOO OOOOLA", 1);
+    HDBn hdbn = HDBn("BILL GATES", 1);
 
     printf("--- Encodage ---\n");
 
@@ -46,4 +46,4 @@ int main () {
     printf("--- Decodage ---\n");
 
     hdbn.decodage();
-}
+}*/
