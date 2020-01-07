@@ -48,7 +48,7 @@ HDBn::HDBn( const char *messagep, uint8_t hdbn ) {
         return;
     }
 
-    if ( HDBN > 1 ) {
+    if ( HDBN > 1 ) { /* si HDBn utilisé */
 
         i = 0, j = 0;
 
@@ -89,7 +89,7 @@ HDBn::HDBn( const char *messagep, uint8_t hdbn ) {
             j++;
         }
 
-    } else {
+    } else { /* si codage arithmetique utilisé */
 
         messageAri = new char[strlen(messagep)];
         strcpy( messageAri, messagep); /* permet de sauvegarder le message au lieu de le repasser par parametre a la fonction d'encodage */
